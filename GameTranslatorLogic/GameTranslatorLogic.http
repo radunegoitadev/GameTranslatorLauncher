@@ -1,0 +1,6 @@
+@GameTranslatorLogic_HostAddress = http://localhost:5073
+
+GET {{GameTranslatorLogic_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

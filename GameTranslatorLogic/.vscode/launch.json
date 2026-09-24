@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ReSharper: .NET Core / .NET 5+ Executable",
+            "type": "coreclr",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "env": {},
+            "preLaunchTask": "ReSharper: Build"
+        },
+        {
+            "name": "ReSharper: .NET Core / .NET 5+ Attach",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:resharper.debugger.pickProcess.coreclr}"
+        }
+    ]
+}
