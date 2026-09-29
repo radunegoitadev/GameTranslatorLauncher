@@ -14,7 +14,8 @@
     "@tauri-apps/plugin-dialog": "^2.7.3",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "react-switch": "^7.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

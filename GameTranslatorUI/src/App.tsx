@@ -1,32 +1,66 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { Library, Settings, Gamepad2, FileSearchCorner } from "lucide-react";
+import { Library, Settings, Gamepad2, FileSearchCorner, Moon, Sun } from "lucide-react";
 import { open,ask,message } from '@tauri-apps/plugin-dialog';
+import GameCardItem from "./GameCard";
+import Switch from "react-switch";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+
 
 interface Game {
   name: string;
   executablePath: string;
+  isTranslated?: boolean;
 }
 
 function App() {
   const [ActiveTab, setActiveTab] = useState("Library");
   const [Loading, setLoading] = useState(false);
   const [Games, setGames] = useState<Game[]>([]);
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(() => {
+    const savedWindowState = localStorage.getItem('isFullScreen');
+    return savedWindowState !== null ? JSON.parse(savedWindowState) : false;
+  });
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const savedTheme = localStorage.getItem('isDarkMode');
+    return savedTheme !== null ? JSON.parse(savedTheme) : true;
+  });
+  const [isBrowsing, setIsBrowsing] = useState<boolean>(false);
+  const [minimizeOnLaunch, setMinimizeOnLaunch] = useState<boolean>(() => {
+    const saved = localStorage.getItem('isMinimized');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
+  const [bottleName, setBottleName] = useState<string>(() => {
+    const saved = localStorage.getItem('bottleName');
+    return saved !== null ? saved : "Gaming";
+  });
+  const [isLinux, setIsLinux] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchGames = async () => {
       setLoading(true);
       try {
         const response = await fetch("http://localhost:5073/SteamGames");
-        const savedManualGames = JSON.parse(localStorage.getItem('manualGames') || '[]');
+        let steamGames: Game[] = [];
 
         if (response.ok) {
-          const steamGames = await response.json();
-          setGames([...steamGames, ...savedManualGames]);
+          steamGames = await response.json();
         }
-        else{
-          setGames(savedManualGames);
+
+        const savedManualGames = JSON.parse(localStorage.getItem('manualGames') || '[]');
+        let verifiedManualGames = savedManualGames;
+
+        if(savedManualGames.length > 0){
+          const verifyResponse = await fetch(`http://localhost:5073/VerifyManualGames`, {method: "POST", headers: {"Content-Type": "application/json"},body: JSON.stringify(savedManualGames)}); 
+        
+          if (verifyResponse.ok){
+            verifiedManualGames = await verifyResponse.json();
+          }
         }
+
+        setGames([...steamGames, ...verifiedManualGames]);
+        localStorage.setItem('manualGames', JSON.stringify(verifiedManualGames));
+        
       } catch (error) {
         console.error("Failed to connect", error);
         setGames(JSON.parse(localStorage.getItem('manualGames') || '[]'));
@@ -35,27 +69,31 @@ function App() {
       }
     };
 
+    if (isFullScreen){
+      const applyFullScreen = async () => {
+        try{
+          const appWindow = getCurrentWindow();
+          await appWindow.setFullscreen(true);
+        }
+        catch(error){
+          console.error(error);
+        }
+      };
+      applyFullScreen();
+    }
+
+    const handleIsLinux = async () => {
+      const isLinuxResponse = await fetch(`http://localhost:5073/IsLinux`);
+      const data = await isLinuxResponse.json();
+      setIsLinux(data.isLinux);
+    }
+
+    handleIsLinux();
     fetchGames();
   }, []);
 
-  const Launch = async (gamePath: string, gameName: string) => {
-    try{
-      const response = await fetch(`http://localhost:5073/LaunchGame?fullPath=${encodeURIComponent(gamePath)}`, {method: 'GET'});
-      if(response.ok){
-        console.log("Launching " + gameName);
-      }
-      else{
-        const errorMessage = await response.text();
-        await message(`Game not translated yet..\n${errorMessage}`)
-      }
-    }
-    catch(error){
-      console.log(error);
-    }
-  };
-
   const Browse = async () => {
-    setActiveTab('Browse');
+    setIsBrowsing(true);
 
     try{
       const selected = await open({
@@ -78,7 +116,7 @@ function App() {
       console.error(error);
     }
     finally{
-      setActiveTab('Library');
+      setIsBrowsing(false);
     }
   };
 
@@ -101,8 +139,10 @@ function App() {
           return;
         }
         const userWantsToAdd = await ask(`Found Translation for ${data.game}. Add to library?`);
+
         if(userWantsToAdd){
-          const newGame = { name:data.game, executablePath:data.executablePath};
+
+          const newGame = { name:data.game, executablePath:data.executablePath, isTranslated:data.isTranslated};
           setGames((prevGames) => [...prevGames, newGame]);
 
           const savedManualGames = JSON.parse(localStorage.getItem('manualGames') || '[]');
@@ -113,8 +153,8 @@ function App() {
         }
       }
       else{
-        const errorMessage = await response.text();
-        await message(errorMessage);
+        const errorMessage = await response.json();
+        await message(errorMessage.message);
       }
     }
     catch(error){
@@ -122,15 +162,60 @@ function App() {
     }
   }
 
+  const handleFullScreenToggle = async (checked: boolean) => {
+    setIsFullScreen(checked);
+    localStorage.setItem('isFullScreen', JSON.stringify(checked));
+
+    try{
+      const appWindow = getCurrentWindow();
+      await appWindow.setFullscreen(checked);
+    }
+    catch(error){
+      console.error("Error at FullScreen toggle:", error);
+    }
+  };
+
+  const markAsTranslated = async (executablePath: string) => {
+    setGames((prevGames) =>
+      prevGames.map((game) => 
+        game.executablePath === executablePath
+        ? {...game, isTranslated: true} : game
+      )
+    );
+
+    const savedManualGames = JSON.parse(localStorage.getItem('manualGames') || '[]');
+    const updatedManualGames = savedManualGames.map((game : Game) =>
+      game.executablePath === executablePath
+        ? {...game, isTranslated: true}
+        : game
+    );
+    localStorage.setItem('manualGames', JSON.stringify(updatedManualGames)); 
+  };
+
+  const handleThemeToggle = async (checked: boolean) => {
+    setIsDarkMode(checked);
+    localStorage.setItem('isDarkMode', JSON.stringify(checked));
+  };
+
+  const handleMinimizeToggle = async (checked: boolean) => {
+    setMinimizeOnLaunch(checked);
+    localStorage.setItem('minimizeOnLaunch', JSON.stringify(checked));
+  }
+
+  const handleBottleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBottleName(e.target.value);
+    localStorage.setItem('bottleName', e.target.value);
+  }
+
   return (
-    <div className="Container">
+    <div className={`Container ${!isDarkMode ? "light-mode" : ""}`}>
       <div className="Menu">
         <ul>
           <li
             onClick={() => {
               setActiveTab("Library");
             }}
-            className={ActiveTab === "Library" ? "active" : ""}
+            className={ActiveTab === "Library" && !isBrowsing ? "active" : ""}
           >
             <Library size={30} />
           </li>
@@ -138,7 +223,7 @@ function App() {
             onClick={() => {
               Browse();
             }}
-            className={ActiveTab === "Browse" ? "active" : ""}
+            className={isBrowsing ? "active" : ""}
           >
             <FileSearchCorner size={30} />
           </li>
@@ -146,7 +231,7 @@ function App() {
             onClick={() => {
               setActiveTab("SupportedGames");
             }}
-            className={ActiveTab === "SupportedGames" ? "active" : ""}
+            className={ActiveTab === "SupportedGames" && !isBrowsing ? "active" : ""}
           >
             <Gamepad2 size={30} />
           </li>
@@ -154,7 +239,7 @@ function App() {
             onClick={() => {
               setActiveTab("Settings");
             }}
-            className={ActiveTab === "Settings" ? "active" : ""}
+            className={ActiveTab === "Settings" && !isBrowsing ? "active" : ""}
           >
             <Settings size={30} />
           </li>
@@ -170,9 +255,7 @@ function App() {
             ) : (
               <div className="GamesGrid">
                 {Games.map((game, index) => (
-                  <div onClick={() => Launch(game.executablePath,game.name)} key={index} className="GameCard">
-                    <img className="GameCover" src={`/assets/img/${game.name}.png`} alt={game.name} />
-                  </div>
+                  <GameCardItem key={index} game={game} onTranslationComplete={markAsTranslated} />
                 ))}
               </div>
             )}
@@ -186,6 +269,68 @@ function App() {
         {ActiveTab === "Settings" && (
           <div className="Content">
             <h2>Settings</h2>
+            <div className="SettingsItems">
+              <div className="EachSetting">
+                <span>FullScreen Mode</span>
+                <Switch
+                checked={isFullScreen}
+                onChange={handleFullScreenToggle}
+                onColor="#28a745"
+                offColor="#3f4147"
+                uncheckedIcon={false}
+                checkedIcon={false}
+                height={24}
+                width={48}
+                />
+              </div>
+              <div className="EachSetting">
+                <span>Theme</span>
+                <Switch
+                checked={isDarkMode}
+                onChange={handleThemeToggle}
+                onColor="#000"
+                offColor="#eee"
+                uncheckedIcon={
+                  <div className="Moon">
+                    <Moon size={14} color="black" />
+                  </div>
+                }
+                checkedIcon={
+                  <div className="Sun">
+                    <Sun size={14} color="white" />
+                  </div>
+                }
+                height={24}
+                width={48}
+                />
+              </div>
+              <div className="EachSetting">
+                <span>Minimize on Game launch</span>
+                <Switch
+                checked={minimizeOnLaunch}
+                onChange={handleMinimizeToggle}
+                onColor="#28a745"
+                offColor="#3f4147"
+                uncheckedIcon={false}
+                checkedIcon={false}
+                height={24}
+                width={48}
+                />
+              </div>
+              {
+                isLinux && (
+                  <div className="EachSetting">
+                    <span>Bottle Name</span>
+                    <input type="text"
+                    value={bottleName}
+                    placeholder="e.g. Gaming"
+                    onChange={handleBottleChange}
+                    className="BottleInput"
+                    />
+                  </div>
+                )
+              }
+            </div>
           </div>
         )}
       </div>

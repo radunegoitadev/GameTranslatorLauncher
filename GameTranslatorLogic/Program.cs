@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -19,6 +20,8 @@ app.UseCors(options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader(
 
 app.UseHttpsRedirection();
 
+var httpClient = new HttpClient();
+
 app.MapGet("/DetectGameByPath", (string path) =>
 {
     if (string.IsNullOrWhiteSpace(path))
@@ -29,17 +32,20 @@ app.MapGet("/DetectGameByPath", (string path) =>
     var supportedGames = new Dictionary<string, string>
     {
         { "Batman.exe", "Batman Vengeance" },
-        { "EldenRing.exe", "Elden Ring" }
+        { "EldenRing.exe", "Elden Ring" },
     };
 
     var exeName = Path.GetFileName(path);
+    var translationFile = Path.Combine(Path.GetDirectoryName(path) ?? "", "ro_installed.txt");
+
+    var isTranslated = File.Exists(translationFile);
 
     if (File.Exists(path) && supportedGames.TryGetValue(exeName, out var gameName))
     {
         return Results.Ok(new
         {
             Game = gameName,
-            Status = "Installed",
+            Status = isTranslated,
             ExecutablePath = path
         });
     }
@@ -51,7 +57,7 @@ app.MapGet("/DetectGameByPath", (string path) =>
     });
 });
 
-app.MapGet("/LaunchGame", (string fullPath) =>
+app.MapGet("/LaunchGame", async (string fullPath, string bottle = "Gaming") =>
 {
     if (string.IsNullOrWhiteSpace(fullPath))
     {
@@ -62,27 +68,59 @@ app.MapGet("/LaunchGame", (string fullPath) =>
     {
         var gameFolder = Path.GetDirectoryName(fullPath);
         var exeName = Path.GetFileName(fullPath);
-        var allowedGames = new HashSet<string>
+        var allowedGames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "Batman.exe",
-            "EldenRing.exe"
+            "EldenRing.exe",
+            "TS4_x64.exe"
         };
 
         if (!allowedGames.Contains(exeName))
         {
-            return Results.BadRequest("The selected game is not in our Translated Games List");
+            return Results.BadRequest($"The selected game is not in our Translated Games List, {exeName}");
         }
 
-        var startInfo = new ProcessStartInfo
+        if (OperatingSystem.IsLinux())
         {
-            FileName = fullPath,
-            WorkingDirectory = gameFolder,
-            UseShellExecute = true
-        };
+            if (string.IsNullOrWhiteSpace(bottle))
+            {
+                return Results.BadRequest(new { Message = "Please specify bottle name" });
+            }
 
-        Process.Start(startInfo);
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "flatpak",
+                Arguments = $"run com.usebottles.bottles -b '{bottle}' -e '{fullPath}'",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var process = new Process();
+            process.StartInfo = startInfo;
+            process.EnableRaisingEvents = true;
 
-        return Results.Ok(new { Message = "The game run succeded" });
+            process.Start();
+            await process.WaitForExitAsync();
+
+            return Results.Ok(new {Message = "The game run Succeded"});
+        }
+        else
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = fullPath,
+                WorkingDirectory = gameFolder,
+                UseShellExecute = true
+            };
+
+            using var process = new Process();
+            process.StartInfo = startInfo;
+            process.EnableRaisingEvents = true;
+
+            process.Start();
+            await process.WaitForExitAsync();
+
+            return Results.Ok(new { Message = "The game run succeded" });
+        }
     }
     catch (Exception e)
     {
@@ -157,12 +195,16 @@ app.MapGet("/SteamGames", () =>
                     break;
             }
 
+            var verifyTranslationFile = Path.Combine(Path.GetDirectoryName(fullexePath) ?? "", "ro_installed.txt");
+            var translated = File.Exists(verifyTranslationFile);
+
             if (File.Exists(fullexePath))
             {
                 foundGames.Add(new
                 {
                     Name = gameFolderName,
-                    ExecutablePath = fullexePath
+                    ExecutablePath = fullexePath,
+                    isTranslated = translated
                 });
             }
         }
@@ -171,10 +213,60 @@ app.MapGet("/SteamGames", () =>
     return foundGames.Count > 0 ? Results.Ok(foundGames) : Results.NotFound("No Supported Games Found on Steam");
 });
 
+app.MapPost("/InstallTranslation", async (string gameName, string gameFolder) =>
+{
+    var formatedGameName = gameName.Replace(" ", "%20");
+    var githubUrl = $"https://github.com/iamradubtwsss-ui/Translations/raw/refs/heads/main/{formatedGameName}.zip";
+
+    var tempZip = Path.Combine(Path.GetTempPath(), $"{gameName}.zip");
+
+    try
+    {
+        var response = await httpClient.GetByteArrayAsync(githubUrl);
+        await File.WriteAllBytesAsync(tempZip, response);
+        
+        ZipFile.ExtractToDirectory(tempZip, gameFolder, overwriteFiles:true);
+        
+        File.Delete(tempZip);
+
+        var markerFile = File.Exists(Path.Combine(gameFolder, "ro_installed.txt"));
+
+        return !markerFile ? Results.BadRequest(new { detail = "The Translation is corrupted..Please try again!"}) : Results.Ok(new { Message = "Installed the Translations to the Game Folder" });
+    }
+    catch (Exception e)
+    {
+        return Results.Problem(e.Message);
+    }
+});
+
+app.MapGet("/IsLinux", () =>
+{
+    var isLinux = OperatingSystem.IsLinux();
+    return Results.Ok(new {isLinux});
+});
+
+app.MapPost("/VerifyManualGames", (List<Game> gamesList) =>
+{
+    var verifiedGames = gamesList.Select(game => new
+    {
+        game.Name,
+        game.ExecutablePath,
+        isTranslated = File.Exists(Path.Combine(Path.GetDirectoryName(game.ExecutablePath) ?? "", "ro_installed.txt"))
+    }).ToList();
+
+    return Results.Ok(verifiedGames);
+});
+
 app.Run();
 
 internal partial class Program
 {
     [GeneratedRegex("\"path\"\\s+\"([^\"]+)\"")]
     private static partial Regex MyRegex();
+}
+
+internal class Game
+{
+    public string Name { get; set; } = string.Empty;
+    public string ExecutablePath { get; set; } = string.Empty;
 }

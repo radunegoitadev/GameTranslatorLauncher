@@ -4,6 +4,15 @@
   box-sizing: border-box;
 }
 
+html, body{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background-color:#2b3137;
+  overflow-x: hidden;
+  height: 100vh;
+}
+
 .Container{
   display: flex;
   height: 100vh;
@@ -37,10 +46,11 @@
 
 .Menu ul li svg {
   transition: transform 0.2s ease, color 0.2s ease;
+  color: rgb(192, 191, 191);
 }
 
 .Menu ul li:hover svg{
-  color: #ffffff;
+  color: white;
   transform: scale(1.10);
 }
 
@@ -52,8 +62,10 @@
 
 li{
   flex: 1;
-  padding: 8vh;
-  border-bottom: 1px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #363d47;
   cursor: pointer;
 }
 
@@ -74,15 +86,38 @@ li:last-child{
   border-radius: 15px;
   margin: 1vw;
   min-height: 400px;
-  height: 90vh;
   padding: 30px;
+}
+
+.Content h2 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #f1f1f1;
+  position: relative;
+  padding-bottom: 10px;
+  margin-bottom: 40px;
+}
+
+.Content h2::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background-color: #5c8b42;
+  border-radius: 2px;
 }
 
 .GamesGrid{
   display: grid;
   grid-template-columns: repeat(auto-fill, 220px);
-  gap: 10px;
+  gap: 20px;
   padding-top: 20px;
+  align-items: stretch;
 }
 
 .GameCover{
@@ -95,12 +130,128 @@ li:last-child{
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .GameCard:hover{
   transform: translateY(-3px);
+}
+
+.GameCard.not-translated .GameCover{
+  filter: grayscale(100%);
+  opacity: 0.7;
+  transition: filter 0.5s ease, opacity 0.5s ease transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.GameCard.translated .GameCover{
+  filter: grayscale(0%);
+  opacity: 1;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  transition: filter 1.5s ease-in-out;
+}
+
+.CardActions{
+  background-color:#121518;
+  padding: 12px;
+  justify-content: center;
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+}
+
+.CardActions button{
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-translate{
+  background-color: transparent;
+  color: #d1d5db;
+}
+
+.btn-launch{
+  background-color: transparent;
+  color: #d1d5db;
+}
+
+.CardActions.translated{
+  background-color: green;
+  transition: 1.5s ease;
+}
+
+.SettingsItems{
+  margin-top: 60px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.EachSetting{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 50px;
+  width: 300px;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.Container.light-mode {
+  background-color: #f3f4f6;
+  color: #1f2937; 
+}
+
+.light-mode .Menu,
+.light-mode .Content {
+  background-color: #ffffff;
+  color: #1f2937;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px;
+}
+
+.light-mode .Menu ul li svg {
+  color: #4b5563;
+}
+
+.light-mode .Menu ul li {
+  border-color: #8797af;
+}
+
+.light-mode .Menu ul li.active {
+  background-color: rgba( 108, 198, 68, 1);
+}
+
+.light-mode .Menu ul li:hover svg {
+  color: #000000;
+}
+
+.light-mode .CardActions {
+  background-color: #e5e7eb;
+}
+
+.light-mode .CardActions.translated{
+  background-color: green;
+}
+
+.light-mode .btn-translate {
+  color: #374151; 
+}
+
+.light-mode html,body{
+  background-color: #f3f4f6;
+  overflow-x: hidden;
+}
+
+.Sun, .Moon{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
