@@ -30,21 +30,23 @@ function App() {
     const saved = localStorage.getItem('isMinimized');
     return saved !== null ? JSON.parse(saved) : false;
   });
-  const [bottleName, setBottleName] = useState<string>(() => {
-    const saved = localStorage.getItem('bottleName');
-    return saved !== null ? saved : "Gaming";
-  });
-  const [isLinux, setIsLinux] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchGames = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5073/SteamGames");
-        let steamGames: Game[] = [];
+        const steamResponse = await fetch("http://localhost:5073/SteamGames");
+        const epicGamesResponse = await fetch("http://localhost:5073/EpicGames");
 
-        if (response.ok) {
-          steamGames = await response.json();
+        let steamGames: Game[] = [];
+        let epicGames: Game[] = [];
+
+        if (steamResponse.ok) {
+          steamGames = await steamResponse.json();
+        }
+
+        if(epicGamesResponse.ok) {
+          epicGames = await epicGamesResponse.json();
         }
 
         const savedManualGames = JSON.parse(localStorage.getItem('manualGames') || '[]');
@@ -58,7 +60,7 @@ function App() {
           }
         }
 
-        setGames([...steamGames, ...verifiedManualGames]);
+        setGames([...epicGames, ...steamGames, ...verifiedManualGames]);
         localStorage.setItem('manualGames', JSON.stringify(verifiedManualGames));
         
       } catch (error) {
@@ -69,6 +71,10 @@ function App() {
       }
     };
 
+    void fetchGames();
+  }, []);
+
+  useEffect(() => {
     if (isFullScreen){
       const applyFullScreen = async () => {
         try{
@@ -79,18 +85,9 @@ function App() {
           console.error(error);
         }
       };
-      applyFullScreen();
+      void applyFullScreen();
     }
-
-    const handleIsLinux = async () => {
-      const isLinuxResponse = await fetch(`http://localhost:5073/IsLinux`);
-      const data = await isLinuxResponse.json();
-      setIsLinux(data.isLinux);
-    }
-
-    handleIsLinux();
-    fetchGames();
-  }, []);
+  }, [isFullScreen]);
 
   const Browse = async () => {
     setIsBrowsing(true);
@@ -202,11 +199,6 @@ function App() {
     localStorage.setItem('minimizeOnLaunch', JSON.stringify(checked));
   }
 
-  const handleBottleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBottleName(e.target.value);
-    localStorage.setItem('bottleName', e.target.value);
-  }
-
   return (
     <div className={`Container ${!isDarkMode ? "light-mode" : ""}`}>
       <div className="Menu">
@@ -221,7 +213,7 @@ function App() {
           </li>
           <li
             onClick={() => {
-              Browse();
+             void Browse();
             }}
             className={isBrowsing ? "active" : ""}
           >
@@ -317,19 +309,6 @@ function App() {
                 width={48}
                 />
               </div>
-              {
-                isLinux && (
-                  <div className="EachSetting">
-                    <span>Bottle Name</span>
-                    <input type="text"
-                    value={bottleName}
-                    placeholder="e.g. Gaming"
-                    onChange={handleBottleChange}
-                    className="BottleInput"
-                    />
-                  </div>
-                )
-              }
             </div>
           </div>
         )}

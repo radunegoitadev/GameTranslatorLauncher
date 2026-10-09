@@ -28,8 +28,8 @@ html, body{
   height: 90vh;
   min-height: 400px;
   border-radius: 15px;
-  box-shadow: rgba(0, 0, 0, 0.30) 0px 3px 6px, rgba(0, 0, 0, 0.70) 0px 3px 6px;
-  margin: 10px 20px 0px 15px;
+  box-shadow: rgba(0, 0, 0, 0.30) 0 3px 6px, rgba(0, 0, 0, 0.70) 0 3px 6px;
+  margin: 10px 20px 0 15px;
   align-content: center;
   color: white;
   font-weight: bolder;
@@ -47,6 +47,14 @@ html, body{
 .Menu ul li svg {
   transition: transform 0.2s ease, color 0.2s ease;
   color: rgb(192, 191, 191);
+}
+
+.Menu ul li.active svg {
+  color: white;
+}
+
+.Menu ul li.active:hover svg {
+  transform: none;
 }
 
 .Menu ul li:hover svg{
@@ -82,7 +90,7 @@ li:last-child{
 
 .Content{
   background: #24292e;
-  box-shadow: rgba(0, 0, 0, 0.30) 0px 3px 6px, rgba(0, 0, 0, 0.70) 0px 3px 6px;
+  box-shadow: rgba(0, 0, 0, 0.30) 0 3px 6px, rgba(0, 0, 0, 0.70) 0 3px 6px;
   border-radius: 15px;
   margin: 1vw;
   min-height: 400px;
@@ -143,7 +151,7 @@ li:last-child{
 .GameCard.not-translated .GameCover{
   filter: grayscale(100%);
   opacity: 0.7;
-  transition: filter 0.5s ease, opacity 0.5s ease transform 0.3s ease, box-shadow 0.3s ease;
+  transition: filter 0.5s ease, opacity 0.5s ease;
 }
 
 .GameCard.translated .GameCover{
@@ -213,7 +221,11 @@ li:last-child{
 .light-mode .Content {
   background-color: #ffffff;
   color: #1f2937;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0 4px 6px;
+}
+
+.light-mode .Content h2 {
+  color: black;
 }
 
 .light-mode .Menu ul li svg {
@@ -226,6 +238,14 @@ li:last-child{
 
 .light-mode .Menu ul li.active {
   background-color: rgba( 108, 198, 68, 1);
+}
+
+.light-mode .Menu ul li.active svg {
+  color: black;
+}
+
+.light-mode .Menu ul li.active:hover svg {
+  transform: none;
 }
 
 .light-mode .Menu ul li:hover svg {
