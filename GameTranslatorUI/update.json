@@ -4,8 +4,8 @@
   "pub_date": "2026-10-14T09:30:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "",
-      "url": ""
+      "signature": "temp_signature",
+      "url": "https://ex.com/dummy.zip"
     }
   }
 }
