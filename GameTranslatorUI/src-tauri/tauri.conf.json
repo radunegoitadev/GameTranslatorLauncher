@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "GameTranslator",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.gametranslator.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -35,6 +35,21 @@
     ],
     "android": {
       "debugApplicationIdSuffix": ".debug"
+    },
+    "externalBin": [
+      "bin/GameTranslatorLogic"
+    ],
+    "resources": [
+      "appsettings.json"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "requireSignedVersion": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERDNjk1MTZCQ0M0NDEzQjMKUldTekUwVE1hMUZwM0ZQMGNycmNETFl2bytYSE1FSDRBMSt6aGhBdTBZM3BPM2ZQTmNZSjFDNFUK",
+      "endpoints": [
+        "https://raw.githubusercontent.com/radunegoitadev/GameTranslatorLauncher/refs/heads/main/GameTranslatorUI/update.json"
+      ]
     }
   }
 }
