@@ -8,4 +8,5 @@ public interface IGameDiscoveryService
     List<object> FindEpicGames();
     Game? AddGame(string path);
     List<Game> VerifyGames(List<Game> games);
+    TranslationListGame[] GetSupportedGames(Dictionary<string, string> gamesNames);
 }

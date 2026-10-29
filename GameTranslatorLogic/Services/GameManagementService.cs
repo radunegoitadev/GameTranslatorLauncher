@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO.Compression;
+using GameTranslatorLogic.Models;
 
 namespace GameTranslatorLogic.Services;
 

@@ -5,12 +5,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
 
-
 builder.Services.AddOpenApi();
 builder.Services.AddCors();
 
-var supportedGames = builder.Configuration.GetSection("SupportedGames").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
-builder.Services.AddSingleton(supportedGames);
+var translationListGames = builder.Configuration.GetSection("TranslationListGames").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+builder.Services.AddSingleton(translationListGames);
 
 builder.Services.AddScoped<IGameDiscoveryService, GameDiscoveryService>();
 builder.Services.AddScoped<IGameManagementService, GameManagementService>();
@@ -60,6 +59,12 @@ app.MapPost("/VerifyManualGames", (List<Game> gamesList,  IGameDiscoveryService 
 {
     var verifiedGames = gameDiscoveryService.VerifyGames(gamesList);
     return Results.Ok(verifiedGames);
+});
+
+app.MapGet("/TranslationListGames", (IGameDiscoveryService gameDiscoveryService) =>
+{
+    var gameTranslationStatus = gameDiscoveryService.GetSupportedGames(translationListGames);
+    return Results.Ok(gameTranslationStatus);
 });
 
 app.Run();
