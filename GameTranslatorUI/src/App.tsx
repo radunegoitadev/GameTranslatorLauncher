@@ -9,11 +9,17 @@ import { Command } from '@tauri-apps/plugin-shell';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import {isTauri} from "@tauri-apps/api/core";
+import GameTranslationStatusCard from "./TranslationStatusGameCard.tsx";
 
 interface Game {
   name: string;
   executablePath: string;
   isTranslated?: boolean;
+}
+
+interface GameTranslationStatus {
+  name: string;
+  status: string;
 }
 
 function App() {
@@ -34,6 +40,7 @@ function App() {
     const saved = localStorage.getItem('isMinimized');
     return saved !== null ? JSON.parse(saved) : false;
   });
+  const [gamesTranslationList, setGamesTranslationList] = useState<GameTranslationStatus[]>()
 
   useEffect(() => {
     const checkForUpdates = async () => {
@@ -124,6 +131,35 @@ function App() {
       void applyFullScreen();
     }
   }, [isFullScreen]);
+
+  useEffect(() => {
+    const SupportedGamesTranslationStatusFill = async (retries = 3) => {
+      try{
+
+        if (retries == 3){
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        const response = await fetch("http://localhost:5000/TranslationListGames");
+
+        if (response.ok){
+          const data = await response.json();
+          setGamesTranslationList(data);
+        }
+      }
+      catch (error){
+        if (retries > 0){
+          setTimeout(() => SupportedGamesTranslationStatusFill(retries - 1), 4000);
+          console.error(error, "RETRY");
+        }
+        else{
+          console.error("NOT WORKING");
+        }
+      }
+    }
+
+    void SupportedGamesTranslationStatusFill();
+  }, []);
 
   const Browse = async () => {
     setIsBrowsing(true);
@@ -296,7 +332,13 @@ function App() {
         {ActiveTab === "SupportedGames" && (
           <div className="Content">
             <h2>Supported Games</h2>
-            <span>Coming Soon</span>
+            <div className="GamesGrid">
+              {
+                gamesTranslationList?.map((gameInfo, index) => (
+                    <GameTranslationStatusCard key={index} name={gameInfo.name} status={gameInfo.status}></GameTranslationStatusCard>
+                ))
+              }
+            </div>
           </div>
         )}
         {ActiveTab === "Settings" && (

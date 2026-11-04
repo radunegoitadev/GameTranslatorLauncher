@@ -17,6 +17,7 @@
         "name": "bin/GameTranslatorLogic",
         "sidecar": true
       }]
-    }
+    },
+    "updater:default"
   ]
 }
