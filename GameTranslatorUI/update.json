@@ -1,0 +1,11 @@
+﻿{
+  "version": "0.1.0",
+  "notes": "First public release",
+  "pub_date": "2026-11-04T10:30:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTQU5ZUFR0T2xUazF4OUpaZVZ1TjVLb0FvTC8rOUIwVW96c2pNR0FweHp5Zks2M1czZ2p5MkRpZ1RCSnN6ckk4T0MxNi9sWjhITCtKRENRWTA5QVZ5YjFBc1l3bkt6dndZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNzgwOTgyCWZpbGU6R2FtZVRyYW5zbGF0b3JfMC4xLjBfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMS4wCmhISVhnK2JlcTRRTnlSN3g2bGVjSkw1MHVWT0FweTRwRHkyL3NJSU5qRzNFMExNMjdOQ2hKeFlIeEJ6SmIwNU1HMWhvQmZ0TmFUNXp4ME9iaS9jNENRPT0K",
+      "url": "https://github.com/radunegoitadev/GameTranslatorLauncher/releases/download/v0.1.0/GameTranslator_0.1.0_x64-setup.exe"
+    }
+  }
+}

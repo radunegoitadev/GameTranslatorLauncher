@@ -24,7 +24,7 @@ export default function GameCardItem({game, onTranslationComplete}: GameCardProp
 
         try{
             const gameFolder = game.executablePath.substring(0,game.executablePath.lastIndexOf('\\'));
-            const response = await fetch(`http://localhost:5073/InstallTranslation?gameName=${game.name}&gameFolder=${encodeURIComponent(gameFolder)}`, {method: 'POST'});
+            const response = await fetch(`http://localhost:5000/InstallTranslation?gameName=${game.name}&gameFolder=${encodeURIComponent(gameFolder)}`, {method: 'POST'});
         
             if(response.ok){
                 setIsTranslated(true);
@@ -49,7 +49,7 @@ export default function GameCardItem({game, onTranslationComplete}: GameCardProp
         setIsRunning(true);
 
         try{
-            const response = await fetch(`http://localhost:5073/LaunchGame?fullPath=${encodeURIComponent(game.executablePath)}&bottle=${encodeURIComponent(bottle)}`, {method: 'GET'});
+            const response = await fetch(`http://localhost:5000/LaunchGame?fullPath=${encodeURIComponent(game.executablePath)}&bottle=${encodeURIComponent(bottle)}`, {method: 'GET'});
             
             if(response.ok){
                 console.log("Launching " + game.name);

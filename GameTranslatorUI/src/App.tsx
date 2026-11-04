@@ -5,7 +5,11 @@ import { open,ask,message } from '@tauri-apps/plugin-dialog';
 import GameCardItem from "./GameCard";
 import Switch from "react-switch";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
+import { Command } from '@tauri-apps/plugin-shell';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
+import {isTauri} from "@tauri-apps/api/core";
+import GameTranslationStatusCard from "./TranslationStatusGameCard.tsx";
 
 interface Game {
   name: string;
@@ -13,10 +17,16 @@ interface Game {
   isTranslated?: boolean;
 }
 
+interface GameTranslationStatus {
+  name: string;
+  status: string;
+}
+
 function App() {
   const [ActiveTab, setActiveTab] = useState("Library");
   const [Loading, setLoading] = useState(false);
   const [Games, setGames] = useState<Game[]>([]);
+  const [foundGames, setFoundGames] = useState<boolean>(false)
   const [isFullScreen, setIsFullScreen] = useState<boolean>(() => {
     const savedWindowState = localStorage.getItem('isFullScreen');
     return savedWindowState !== null ? JSON.parse(savedWindowState) : false;
@@ -30,35 +40,71 @@ function App() {
     const saved = localStorage.getItem('isMinimized');
     return saved !== null ? JSON.parse(saved) : false;
   });
-  const [bottleName, setBottleName] = useState<string>(() => {
-    const saved = localStorage.getItem('bottleName');
-    return saved !== null ? saved : "Gaming";
-  });
-  const [isLinux, setIsLinux] = useState<boolean>(false);
+  const [gamesTranslationList, setGamesTranslationList] = useState<GameTranslationStatus[]>()
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const update = await check();
+        if (update) {
+          const wantsToUpdate = confirm("A new update is available. Do you want to update?");
+          if (wantsToUpdate) {
+            await update.downloadAndInstall();
+            await relaunch();
+          }
+        }
+      }
+      catch (error) {
+        console.error(error);
+      }
+    };
+
+    if (isTauri()) {
+      void checkForUpdates();
+    }
+  }, []);
 
   useEffect(() => {
     const fetchGames = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5073/SteamGames");
-        let steamGames: Game[] = [];
+        const command = Command.sidecar('bin/GameTranslatorLogic');
+        command.stdout.on('data', line => console.log(`C# Info: ${line}`));
+        command.stderr.on('data', line => console.error(`C# Error: ${line}`));
 
-        if (response.ok) {
-          steamGames = await response.json();
+        await command.spawn();
+        console.log('Backend started');
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const steamResponse = await fetch("http://localhost:5000/SteamGames");
+        const epicGamesResponse = await fetch("http://localhost:5000/EpicGames");
+
+        let steamGames: Game[] = [];
+        let epicGames: Game[] = [];
+
+        if (steamResponse.ok) {
+          steamGames = await steamResponse.json();
+        }
+
+        if(epicGamesResponse.ok) {
+          epicGames = await epicGamesResponse.json();
         }
 
         const savedManualGames = JSON.parse(localStorage.getItem('manualGames') || '[]');
         let verifiedManualGames = savedManualGames;
 
         if(savedManualGames.length > 0){
-          const verifyResponse = await fetch(`http://localhost:5073/VerifyManualGames`, {method: "POST", headers: {"Content-Type": "application/json"},body: JSON.stringify(savedManualGames)}); 
+          const verifyResponse = await fetch(`http://localhost:5000/VerifyManualGames`, {method: "POST", headers: {"Content-Type": "application/json"},body: JSON.stringify(savedManualGames)});
         
           if (verifyResponse.ok){
             verifiedManualGames = await verifyResponse.json();
           }
         }
 
-        setGames([...steamGames, ...verifiedManualGames]);
+        const allGames = [...epicGames, ...steamGames, ...verifiedManualGames];
+        setGames(allGames);
+        setFoundGames(allGames.length > 0);
         localStorage.setItem('manualGames', JSON.stringify(verifiedManualGames));
         
       } catch (error) {
@@ -68,7 +114,10 @@ function App() {
         setLoading(false);
       }
     };
+    void fetchGames();
+  }, []);
 
+  useEffect(() => {
     if (isFullScreen){
       const applyFullScreen = async () => {
         try{
@@ -79,17 +128,37 @@ function App() {
           console.error(error);
         }
       };
-      applyFullScreen();
+      void applyFullScreen();
+    }
+  }, [isFullScreen]);
+
+  useEffect(() => {
+    const SupportedGamesTranslationStatusFill = async (retries = 3) => {
+      try{
+
+        if (retries == 3){
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        const response = await fetch("http://localhost:5000/TranslationListGames");
+
+        if (response.ok){
+          const data = await response.json();
+          setGamesTranslationList(data);
+        }
+      }
+      catch (error){
+        if (retries > 0){
+          setTimeout(() => SupportedGamesTranslationStatusFill(retries - 1), 4000);
+          console.error(error, "RETRY");
+        }
+        else{
+          console.error("NOT WORKING");
+        }
+      }
     }
 
-    const handleIsLinux = async () => {
-      const isLinuxResponse = await fetch(`http://localhost:5073/IsLinux`);
-      const data = await isLinuxResponse.json();
-      setIsLinux(data.isLinux);
-    }
-
-    handleIsLinux();
-    fetchGames();
+    void SupportedGamesTranslationStatusFill();
   }, []);
 
   const Browse = async () => {
@@ -128,14 +197,14 @@ function App() {
     }
 
     try{
-      const response = await fetch(`http://localhost:5073/DetectGameByPath?path=${encodeURIComponent(gamePath)}`)
+      const response = await fetch(`http://localhost:5000/DetectGameByPath?path=${encodeURIComponent(gamePath)}`)
 
       if(response.ok){
         const data = await response.json();
         const isAlreadyInLibrary = Games.some(game => game.executablePath === data.executablePath);
 
         if (isAlreadyInLibrary){
-          await message(`${data.game} is already in library!`);
+          await message(`${data.name} is already in library!`);
           return;
         }
         const userWantsToAdd = await ask(`Found Translation for ${data.game}. Add to library?`);
@@ -149,7 +218,7 @@ function App() {
           savedManualGames.push(newGame);
           localStorage.setItem('manualGames', JSON.stringify(savedManualGames));
 
-          await message(`Added Game ${data.game}`);
+          await message(`Added ${data.name}`);
         }
       }
       else{
@@ -202,11 +271,6 @@ function App() {
     localStorage.setItem('minimizeOnLaunch', JSON.stringify(checked));
   }
 
-  const handleBottleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    setBottleName(e.target.value);
-    localStorage.setItem('bottleName', e.target.value);
-  }
-
   return (
     <div className={`Container ${!isDarkMode ? "light-mode" : ""}`}>
       <div className="Menu">
@@ -221,7 +285,7 @@ function App() {
           </li>
           <li
             onClick={() => {
-              Browse();
+             void Browse();
             }}
             className={isBrowsing ? "active" : ""}
           >
@@ -253,17 +317,28 @@ function App() {
             {Loading ? (
               <p>Scanning for games, Please Wait..</p>
             ) : (
-              <div className="GamesGrid">
-                {Games.map((game, index) => (
-                  <GameCardItem key={index} game={game} onTranslationComplete={markAsTranslated} />
-                ))}
-              </div>
+                foundGames ? (
+                    <div className="GamesGrid">
+                      {Games.map((game, index) => (
+                          <GameCardItem key={index} game={game} onTranslationComplete={markAsTranslated} />
+                      ))}
+                    </div>
+                ) : (
+                  <p>No games found</p>
+                )
             )}
           </div>
         )}
         {ActiveTab === "SupportedGames" && (
           <div className="Content">
             <h2>Supported Games</h2>
+            <div className="GamesGrid">
+              {
+                gamesTranslationList?.map((gameInfo, index) => (
+                    <GameTranslationStatusCard key={index} name={gameInfo.name} status={gameInfo.status}></GameTranslationStatusCard>
+                ))
+              }
+            </div>
           </div>
         )}
         {ActiveTab === "Settings" && (
@@ -317,19 +392,6 @@ function App() {
                 width={48}
                 />
               </div>
-              {
-                isLinux && (
-                  <div className="EachSetting">
-                    <span>Bottle Name</span>
-                    <input type="text"
-                    value={bottleName}
-                    placeholder="e.g. Gaming"
-                    onChange={handleBottleChange}
-                    className="BottleInput"
-                    />
-                  </div>
-                )
-              }
             </div>
           </div>
         )}
