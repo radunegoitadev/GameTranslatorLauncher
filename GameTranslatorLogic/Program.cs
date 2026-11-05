@@ -5,12 +5,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpClient();
 
-
 builder.Services.AddOpenApi();
 builder.Services.AddCors();
 
-var supportedGames = builder.Configuration.GetSection("SupportedGames").Get<Dictionary<string, string>>() ?? new Dictionary<string, string>();
-builder.Services.AddSingleton(supportedGames);
+var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+var stream = assembly.GetManifestResourceStream("GameTranslatorLogic.appsettings.json");
+
+if (stream != null)
+{
+    builder.Configuration.AddJsonStream(stream);
+}
 
 builder.Services.AddScoped<IGameDiscoveryService, GameDiscoveryService>();
 builder.Services.AddScoped<IGameManagementService, GameManagementService>();
@@ -60,6 +64,19 @@ app.MapPost("/VerifyManualGames", (List<Game> gamesList,  IGameDiscoveryService 
 {
     var verifiedGames = gameDiscoveryService.VerifyGames(gamesList);
     return Results.Ok(verifiedGames);
+});
+
+app.MapGet("/TranslationListGames", (IConfiguration config) =>
+{
+    var gameTranslationStatus = config.GetSection("TranslationListGames").Get<Dictionary<string, string>>();
+    var objects = gameTranslationStatus?.Select(t => new TranslationListGame
+    {
+        Name = t.Key,
+        Status = t.Value
+    }).ToArray();
+
+    return Results.Ok(objects);
+
 });
 
 app.Run();

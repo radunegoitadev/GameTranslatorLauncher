@@ -5,8 +5,12 @@ using GameTranslatorLogic.Models;
 
 namespace GameTranslatorLogic.Services;
 
-public partial class GameDiscoveryService(Dictionary<string, string> supportedGames) : IGameDiscoveryService
+public partial class GameDiscoveryService(IConfiguration configuration) : IGameDiscoveryService
 {
+    private readonly Dictionary<string, string> _supportedGames =
+        configuration.GetSection("SupportedGames").Get<Dictionary<string, string>>() ??
+        new Dictionary<string, string>();
+    
     public Game? AddGame(string path)
     {
         if (string.IsNullOrWhiteSpace(path))
@@ -19,7 +23,7 @@ public partial class GameDiscoveryService(Dictionary<string, string> supportedGa
 
         var isTranslated = File.Exists(translationFile);
 
-        if (!File.Exists(path) || !supportedGames.TryGetValue(exeName, out var gameName)) return null;
+        if (!File.Exists(path) || !_supportedGames.TryGetValue(exeName, out var gameName)) return null;
 
         return new Game
         {
@@ -32,35 +36,44 @@ public partial class GameDiscoveryService(Dictionary<string, string> supportedGa
     public List<object> FindEpicGames()
     {
         var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-        var epicGamesPath = Path.Combine(programData, @"Epic\\EpicGamesLauncher\\Data\\Manifests");
-        var nameToExeMap = supportedGames.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+        var epicGamesPath = Path.Combine(programData, @"Epic\EpicGamesLauncher\Data\Manifests");
         var foundGames = new List<object>();
-
+        
         if (!Directory.Exists(epicGamesPath))
         {
             return foundGames;
         }
-
+        
         foreach (var item in Directory.GetFiles(epicGamesPath, "*.item"))
         {
             try
             {
                 var jsonContent = File.ReadAllText(item);
-
                 using var doc = JsonDocument.Parse(jsonContent);
+                
                 var root = doc.RootElement;
 
                 if (!root.TryGetProperty("DisplayName", out var nameElement) ||
                     !root.TryGetProperty("InstallLocation", out var locationElement)) continue;
             
                 var epicGameName = nameElement.GetString();
+                if (string.IsNullOrEmpty(epicGameName)) continue;
 
-                if (string.IsNullOrEmpty(epicGameName) ||
-                    !nameToExeMap.TryGetValue(epicGameName, out var exeName)) continue;
+                var cleanEpicGameName = new string(epicGameName.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+                var matchedGame = _supportedGames.FirstOrDefault(kvp =>
+                {
+                    var cleanSupportedGameName = new string(kvp.Value.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+                    return cleanEpicGameName.Contains(cleanSupportedGameName);
+                });
+                
+                if (matchedGame.Key == null) continue;
+
+                var exeName = matchedGame.Key;
+                var actualGameName = matchedGame.Value;
                     
                 var installLocation = locationElement.GetString();
-                        
                 var fullExePath = Path.Combine(installLocation ?? "", exeName);
+                
                 var translationFile = Path.Combine(Path.GetDirectoryName(fullExePath) ?? "", "ro_installed.txt");
                 var translated = File.Exists(translationFile);
 
@@ -68,7 +81,7 @@ public partial class GameDiscoveryService(Dictionary<string, string> supportedGa
                 {
                     foundGames.Add(new
                     {
-                        Name = epicGameName,
+                        Name = actualGameName,
                         ExecutablePath = fullExePath,
                         isTranslated = translated
                     });
@@ -129,7 +142,7 @@ public partial class GameDiscoveryService(Dictionary<string, string> supportedGa
 
             foreach (var library in libraryPaths)
             {
-                foreach (var (gameFolderName, gameExe) in supportedGames)
+                foreach (var (gameExe, gameFolderName) in _supportedGames)
                 {
                     var gameRootPath = Path.Combine(library, "steamapps", "common", gameFolderName);
                     var fullexePath = "";
@@ -169,6 +182,11 @@ public partial class GameDiscoveryService(Dictionary<string, string> supportedGa
         }
         
         return games;
+    }
+
+    public TranslationListGame[] GetSupportedGames(Dictionary<string, string> gamesNames)
+    {
+        return [.. gamesNames.Select(x => new TranslationListGame { Name = x.Key, Status = x.Value })];
     }
 
     [GeneratedRegex("\"path\"\\s+\"([^\"]+)\"")]
