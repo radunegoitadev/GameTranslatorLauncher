@@ -10,6 +10,7 @@ import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import {isTauri} from "@tauri-apps/api/core";
 import GameTranslationStatusCard from "./TranslationStatusGameCard.tsx";
+import {getVersion} from "@tauri-apps/api/app";
 
 interface Game {
   name: string;
@@ -42,23 +43,26 @@ function App() {
   });
   const [gamesTranslationList, setGamesTranslationList] = useState<GameTranslationStatus[]>()
 
-  useEffect(() => {
-    const checkForUpdates = async () => {
-      try {
-        const update = await check();
-        if (update) {
-          const wantsToUpdate = confirm("A new update is available. Do you want to update?");
-          if (wantsToUpdate) {
-            await update.downloadAndInstall();
-            await relaunch();
-          }
+  const checkForUpdates = async () => {
+    try {
+      const update = await check();
+      if (update) {
+        const wantsToUpdate = confirm(`A new update is available -> v${update.version}. Do you want to update?`);
+        if (wantsToUpdate) {
+          await update.downloadAndInstall();
+          await relaunch();
         }
       }
-      catch (error) {
-        console.error(error);
+      else {
+        await message(`Latest version is installed -> v${await getVersion()}`);
       }
-    };
+    }
+    catch (error) {
+      console.error(error);
+    }
+  };
 
+  useEffect(() => {
     if (isTauri()) {
       void checkForUpdates();
     }
@@ -131,6 +135,10 @@ function App() {
       void applyFullScreen();
     }
   }, [isFullScreen]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("light-mode", !isDarkMode);
+  }, [isDarkMode]);
 
   useEffect(() => {
     const SupportedGamesTranslationStatusFill = async (retries = 3) => {
@@ -310,9 +318,9 @@ function App() {
         </ul>
       </div>
 
-      <div className="MainWindow">
+      <div className={`MainWindow ${!isDarkMode ? "light-mode" : ""}`}>
         {ActiveTab === "Library" && (
-          <div className="Content">
+          <div className={"Content"}>
             <h2>Library</h2>
             {Loading ? (
               <p>Scanning for games, Please Wait..</p>
@@ -392,6 +400,7 @@ function App() {
                 width={48}
                 />
               </div>
+              <button onClick={checkForUpdates} className={`btn-update ${!isDarkMode ? "light-mode" : ""}`}>Check For Updates</button>
             </div>
           </div>
         )}

@@ -11,6 +11,10 @@ html, body{
   background-color: #2b3137;
   overflow-x: hidden;
   height: 100vh;
+  user-select: none;
+  scrollbar-color: #24292e #2b3137;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
 }
 
 .Container{
@@ -92,7 +96,7 @@ li:last-child{
   background: #24292e;
   box-shadow: rgba(0, 0, 0, 0.30) 0 3px 6px, rgba(0, 0, 0, 0.70) 0 3px 6px;
   border-radius: 15px;
-  margin: 1vw;
+  margin: 3%;
   min-height: 400px;
   padding: 30px;
 }
@@ -120,6 +124,10 @@ li:last-child{
   border-radius: 2px;
 }
 
+.MainWindow.light-mode h2::after{
+  background-color: rgba( 108, 198, 68, 1);
+}
+
 .GamesGrid{
   display: grid;
   grid-template-columns: repeat(auto-fill, 220px);
@@ -142,6 +150,7 @@ li:last-child{
   display: flex;
   flex-direction: column;
   height: 100%;
+  transition: ease 0.05s;
 }
 
 .GameCard:hover{
@@ -166,7 +175,7 @@ li:last-child{
   padding: 12px;
   justify-content: center;
   display: flex;
-  min-height: 70px;
+  height: 50px;
   align-items: center;
 }
 
@@ -187,6 +196,30 @@ li:last-child{
 .btn-launch{
   background-color: transparent;
   color: #d1d5db;
+}
+
+.btn-update{
+  background-color: #5c8b42;
+  border: none;
+  border-radius: 20px;
+  padding: 10px;
+  color: whitesmoke;
+  font-weight: bold;
+  margin-top: 20px;
+  transition: ease 0.2s;
+}
+
+.btn-update:active{
+  background-color: #4e7439;
+}
+
+.btn-update:hover{
+  scale: 1.05;
+  color: black;
+}
+
+.btn-update.light-mode{
+  background-color: rgba( 108, 198, 68, 1);
 }
 
 .CardActions.translated{
@@ -264,14 +297,21 @@ li:last-child{
   color: #374151; 
 }
 
-.light-mode html,body{
-  background-color: #f3f4f6;
-  overflow-x: hidden;
-}
-
 .Sun, .Moon{
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+
+:root{
+  --bg: #2b3137;
+}
+
+:root.light-mode{
+  --bg: #f3f4f6;
+}
+
+html,body,#root{
+  background-color: var(--bg);
 }
