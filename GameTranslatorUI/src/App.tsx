@@ -231,7 +231,7 @@ function App() {
       }
       else{
         const errorMessage = await response.json();
-        await message(errorMessage.message);
+        await message(errorMessage);
       }
     }
     catch(error){
