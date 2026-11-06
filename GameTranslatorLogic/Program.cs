@@ -45,19 +45,19 @@ app.MapGet("/LaunchGame", async (string fullPath, IGameManagementService gameMan
 app.MapGet("/DetectGameByPath", (string path,IGameDiscoveryService gameDiscoveryService) =>
 {
     var game = gameDiscoveryService.AddGame(path);
-    return game == null ? Results.NotFound("No Translations detected for the selected game or path is invalid") : Results.Ok(game);
+    return game == null ? Results.BadRequest($"No Translations detected for the selected game ** {Path.GetFileName(path)} ** or path is invalid") : Results.Ok(game);
 });
 
 app.MapGet("/SteamGames", (IGameDiscoveryService gameDiscoveryService) =>
 {
     var games = gameDiscoveryService.FindSteamGames();
-    return games.Count == 0 ?  Results.NotFound("No supported games found on Steam") : Results.Ok(games);
+    return Results.Ok(games);
 });
 
 app.MapGet("/EpicGames", (IGameDiscoveryService  gameDiscoveryService) =>
 {
     var games = gameDiscoveryService.FindEpicGames();
-    return games.Count == 0 ? Results.NotFound("No supported games found on Epic Games") : Results.Ok(games);
+    return Results.Ok(games);
 });
 
 app.MapPost("/VerifyManualGames", (List<Game> gamesList,  IGameDiscoveryService gameDiscoveryService) =>
