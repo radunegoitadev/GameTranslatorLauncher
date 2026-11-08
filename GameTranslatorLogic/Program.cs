@@ -79,4 +79,10 @@ app.MapGet("/TranslationListGames", (IConfiguration config) =>
 
 });
 
+app.MapPost("/CloseBackend", (IHostApplicationLifetime lifetime) =>
+{
+    lifetime.StopApplication();
+    return Results.Ok();
+});
+
 app.Run();
