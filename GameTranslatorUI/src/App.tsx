@@ -47,8 +47,14 @@ function App() {
     try {
       const update = await check();
       if (update) {
-        const wantsToUpdate = confirm(`A new update is available -> v${update.version}. Do you want to update?`);
+        const wantsToUpdate = await ask(`A new update is available -> v${update.version}. Do you want to update?`);
         if (wantsToUpdate) {
+          try {
+            await fetch("http://localhost:5000/CloseBackend", {method: "POST"});
+          }catch (error){
+            alert(error);
+          }
+          await new Promise((r) => setTimeout(r,1000));
           await update.downloadAndInstall();
           await relaunch();
         }
@@ -59,6 +65,7 @@ function App() {
     }
     catch (error) {
       console.error(error);
+      alert(`Eroare: ${error}`);
     }
   };
 

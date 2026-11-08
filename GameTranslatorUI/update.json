@@ -3,8 +3,8 @@
   "notes": "Fix and improvements of updater and light mode",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/radunegoitadev/GameTranslatorLauncher/releases/download/v0.1.1/GameTranslator_0.1.0_x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTQU5ZUFR0T2xUa3hNRm9BRWdsM0FlVVlnMUozc1RNTnV1Umt5OWVVUEVwcGJwYXZ3dVVEeTgvQVZIeWd1NDI1dzhia25MeDc3T3hUb1RwNHN5Ui9yQml4OWJzUTNBaVFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzOTc2MDI5CWZpbGU6R2FtZVRyYW5zbGF0b3JfMC4xLjFfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMS4xClpaRVA3U21GREVVVmY1Yis2NCtFZlZtNE9kdzF0NSt0NmxsSW0vWXphTEVHcXpHT3BPSGw0NFA3cDZGTm9JMXcyV1NRZDJKcWt4QXZXRTBlODhqYUJ3PT0K"
+      "url": "https://github.com/radunegoitadev/GameTranslatorLauncher/releases/download/v0.1.1/GameTranslator_0.1.1_x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTQU5ZUFR0T2xUazNIdE1YU21LbmdBUyt0ZDcwR3FYN0hyaDVrZzZuay95ck9kWDRCZG9rR2FmcVZrcUNob2JDUGsyN01tVFlJU3J2K1hNM2ladjFxSzU5N3pHbUZrR2dJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0MTY4OTYyCWZpbGU6R2FtZVRyYW5zbGF0b3JfMC4xLjFfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMS4xCk5HV1gxWWozWVR5V0QrcS9tRWkzVWU0Mlo4Y0NqeEhCZnZjaGd1TjdUR1c3NlZTWEROak5tWU8rbXl2WUJzWHE2ZDBncXBlVzgwSUExRzNmRXZTOUFBPT0K"
     }
   }
 }
