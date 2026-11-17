@@ -47,7 +47,8 @@ public class GameManagementService(IHttpClientFactory httpClientFactory) : IGame
             var allowedGames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "EldenRing.exe",
-                "HogwartsLegacy.exe"
+                "HogwartsLegacy.exe",
+                "Dispatch.exe"
             };
 
             if (!allowedGames.Contains(exeName))
