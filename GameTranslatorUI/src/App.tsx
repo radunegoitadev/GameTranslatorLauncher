@@ -222,11 +222,11 @@ function App() {
           await message(`${data.name} is already in library!`);
           return;
         }
-        const userWantsToAdd = await ask(`Found Translation for ${data.game}. Add to library?`);
+        const userWantsToAdd = await ask(`Found Translation for ${data.name}. Add to library?`);
 
         if(userWantsToAdd){
 
-          const newGame = { name:data.game, executablePath:data.executablePath, isTranslated:data.isTranslated};
+          const newGame = { name:data.name, executablePath:data.executablePath, isTranslated:data.isTranslated};
           setGames((prevGames) => [...prevGames, newGame]);
 
           const savedManualGames = JSON.parse(localStorage.getItem('manualGames') || '[]');
